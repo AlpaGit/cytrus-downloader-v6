@@ -1,0 +1,21 @@
+[package]
+name = "cytrus-downloader-v6"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+flatbuffers = "23.1.21"
+flatc-rust = "0.2.0"
+reqwest = { version = "0.11.14", features = ["json", "stream"] }
+serde = { version = "1.0.154", features = ["derive", "serde_derive"] }
+serde_json = "1.0.94"
+tokio = { version = "1.26.0", features = ["full"] }
+futures-util = "0.3.14"
+sha1_smol = "1.0.0"
+rayon = "1.7.0"
+futures = "0.3.26"
+
+[build-dependencies]
+flatc-rust = "*"

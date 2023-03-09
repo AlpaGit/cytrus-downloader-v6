@@ -1,0 +1,29 @@
+table FileFb {
+  name:string;
+  size:long;
+  hash:[int8];
+  chunks:[ChunkFb];
+  executable:bool;
+  symlink:string;
+}
+
+table FragmentFb {
+  name:string;
+  files:[FileFb];
+  bundles:[BundleFb];
+}
+
+table ChunkFb {
+  hash:[int8];
+  size:long;
+  offset:long;
+}
+
+table BundleFb {
+  hash:[int8];
+  chunks:[ChunkFb];
+}
+
+table ManifestFb {
+  fragments:[FragmentFb];
+}
