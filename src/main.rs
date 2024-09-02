@@ -31,6 +31,8 @@ const DEFAULT_DIR_OUT: &str = "./out";
 
 #[tokio::main]
 async fn main() -> ExitCode {
+    // read afile calld "manifest.bin"
+
     match entry().await {
         Ok(_) => ExitCode::SUCCESS,
         Err(_) => ExitCode::FAILURE,
@@ -38,23 +40,23 @@ async fn main() -> ExitCode {
 }
 
 async fn entry() -> Result<(), ()> {
-    let mut args = env::args();
-    let program = args.next().unwrap();
+    let args: Vec<String> = env::args().collect();
+    let program = &args[0];
 
-    match args.next() {
-        Some(subcommand) => match subcommand.as_str() {
-            "download" => download_from_args(args).await,
-            _ => {
-                eprintln!("ERROR: unknown subcommand: {}", subcommand);
-                usage(&program);
-                Err(())
-            }
-        },
-        None => {
-            usage(&program);
-            Err(())
-        }
-    }.expect("ERROR: something went wrong while processing the subcommand");
+    if args.len() < 1 {
+        usage(&program);
+        return Ok(());
+    }
+
+    let sub_command = &args[1];
+
+    if(sub_command == "download"){
+        download_from_args(&args).await.expect("Could not download the game");
+    }
+    else{
+        eprintln!("ERROR: unknown subcommand: {}", sub_command);
+        usage(&program);
+    }
 
     Ok(())
 }
@@ -68,15 +70,16 @@ fn usage(program: &str) {
     eprintln!("                                                        on the <release> or main if not specified [main|beta]");
 }
 
-async fn download_from_args(mut args: env::Args) -> Result<(), ()> {
-    let game = args.nth(1).unwrap_or_else(|| String::from(DEFAULT_GAME));
-    let platform = args.nth(3).unwrap_or_else(|| String::from(DEFAULT_PLATFORM));
-    let release = args.nth(4).unwrap_or_else(|| String::from(DEFAULT_RELEASE));
-    let version = match args.nth(2) {
-        Some(version) => version,
-        None => get_latest_version(&game, &platform, &release).await?,
-    };
-    
+async fn download_from_args(args: &Vec<String>) -> Result<(), ()> {
+    let game = &args[2];
+    let mut version =  (&args[3]).to_string();
+    let platform = &args[4];
+    let release = &args[5];
+
+    if version == "0" {
+        version = get_latest_version(&game, &platform, &release).await?;
+    }
+
     download(&game, &version, &platform).await.map_err(|err| {
         eprintln!("ERROR: could not download the game: {:?}", err);
         ()
@@ -88,7 +91,10 @@ async fn download(game: &str, version: &str, platform:&str) -> Result<(), ()> {
     println!("Downloading {} version {}", game, version);
     
     let manifest = get_manifest(game, version, platform, "main").await?;
-    println!("Manifest downloaded");
+ k     println!("Manifest downloaded");
+
+
+
     let out_path = &Path::new(DEFAULT_DIR_OUT)
                                     .join(game)
                                     .join(platform);
@@ -342,6 +348,14 @@ async fn get_manifest<'a>(game: &str, version: &str, platform: &str, release: &s
     })?;
     
     let bytes = bytes.to_vec();
+
+    let file = File::open("manifest.manifest").map_err(|err| {
+        eprintln!("ERROR: could not open the file: {}", err);
+        ()
+    }).unwrap();
+
+    // get the bytes
+    let bytes = file.bytes().map(|byte| byte.unwrap()).collect::<Vec<u8>>();
 
     let manifest_fb = flatbuffers::root::<ManifestFb>(&bytes).map_err(|err| {
         eprintln!("ERROR: could not parse the manifest: {}", err);
